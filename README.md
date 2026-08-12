@@ -8,6 +8,51 @@ Tomos Publisherは、Obsidian Desktop / Mobileで開いているMarkdownをTomos
 - HTTPSで利用できるTomosサイト
 - Obsidian Desktop または Mobile
 
+## インストール
+
+Tomos Publisherは現在alpha版のため、Obsidian Community Pluginsには登録していません。
+
+GitHub Releaseから以下の2ファイルをダウンロードしてください。
+
+- `main.js`
+- `manifest.json`
+
+[Tomos Publisher 0.1.0 alphaをダウンロード](https://github.com/tomosweb/tomos-obsidian/releases/tag/0.1.0)
+
+Desktop / Mobileとも同じプラグインファイルを使用します。
+
+### 1. プラグインフォルダーを作成
+
+使用するObsidian Vault内に、次のフォルダーを作成します。
+
+```text
+<Vault>/.obsidian/plugins/tomos-obsidian/
+```
+
+`.obsidian` フォルダーが見えない場合は、OSやファイル管理アプリで隠しファイルを表示してください。
+
+### 2. ファイルを配置
+
+ダウンロードした2ファイルを、作成したフォルダーへ配置します。
+
+```text
+<Vault>/.obsidian/plugins/tomos-obsidian/
+  main.js
+  manifest.json
+```
+
+### 3. Obsidianで有効化
+
+Obsidianを開き、「設定」→「コミュニティプラグイン」から`Tomos Publisher`を有効にしてください。
+
+プラグインが一覧に表示されない場合は、Obsidianを再起動してください。
+
+### 4. Tomosを設定
+
+Tomos Publisherの設定画面で、Tomos URLと投稿用トークンを入力します。設定後、「Tomos接続テスト」を実行してください。
+
+投稿用トークンは、Tomos Postの「セキュリティ」から発行できます。
+
 ## できること
 
 - 現在開いているMarkdownをTomosへ送信
