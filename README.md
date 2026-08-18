@@ -10,6 +10,29 @@ Tomosで記事を書き始めるための新規作成コマンド、Tomos Inbox�
 - HTTPSで利用できるTomosサイト
 - Obsidian Desktop または Mobile
 
+## インストール
+
+Tomos Publisherは現在Obsidian Community Pluginsへの登録準備中です。登録までは手動でインストールできます。
+
+このリポジトリの次の2ファイルを使用します。
+
+- `main.js`
+- `manifest.json`
+
+使用するObsidian Vault内に次のフォルダーを作成し、2ファイルを配置してください。
+
+```text
+<Vault>/.obsidian/plugins/tomos-obsidian/
+  main.js
+  manifest.json
+```
+
+`.obsidian` が見えない場合は、OSやファイル管理アプリで隠しファイルを表示してください。
+
+配置後、Obsidianを開き、「設定」→「コミュニティプラグイン」から `Tomos Publisher` を有効にします。一覧に表示されない場合はObsidianを再起動してください。
+
+Desktop / Mobileとも同じプラグインファイルを使用します。
+
 ## できること
 
 - 現在開いているMarkdownをTomosへ送信
