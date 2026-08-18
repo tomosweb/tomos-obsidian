@@ -12,9 +12,9 @@ Tomosで記事を書き始めるための新規作成コマンド、Tomos Inbox�
 
 ## インストール
 
-Tomos Publisherは現在Obsidian Community Pluginsへの登録準備中です。登録までは手動でインストールできます。
+Tomos Publisherは現在Obsidian Community Pluginsへの登録準備中です。登録まではGitHub Releaseから手動でインストールできます。
 
-このリポジトリの次の2ファイルを使用します。
+最新ReleaseのAssetsから次の2ファイルを取得してください。
 
 - `main.js`
 - `manifest.json`
@@ -165,6 +165,17 @@ Vault内で記事を保存するフォルダと、Front Matterの `folder:` で�
 リポジトリ内の[記事テンプレート](templates/article-template.md)をObsidian Vaultへコピーして利用することもできます。
 
 TomosのMarkdown仕様の正本は公式の[Tomos用Markdownの書き方](https://tomoswords.org/docs/markdown/)です。プラグイン内のテンプレートは、記事を書き始めるための初期雛形として扱います。
+
+## 開発
+
+ソースコードとビルド設定はこの公開リポジトリで管理しています。
+
+```bash
+npm install
+npm run build
+```
+
+`main.js` は生成物のためGit管理には含めず、公開版はGitHub ReleaseのAssetsとして配布します。
 
 ## セキュリティ
 
