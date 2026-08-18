@@ -363,7 +363,8 @@ export default class TomosPublisherPlugin extends Plugin {
     const data = await this.app.vault.readBinary(file);
     if (data.byteLength <= 0) throw new Error(`画像「${file.name}」が空です。`);
     if (data.byteLength > MAX_IMAGE_BYTES) throw new Error(`画像「${file.name}」は10MB以下にしてください。`);
-    const digest = await crypto.subtle.digest("SHA-256", data);
+    const webCrypto: Crypto = globalThis.crypto;
+    const digest: ArrayBuffer = await webCrypto.subtle.digest("SHA-256", data);
     const hash = Array.from(new Uint8Array(digest))
       .map((value) => value.toString(16).padStart(2, "0"))
       .join("");
@@ -450,8 +451,6 @@ class TomosPublisherSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl).setName("Tomos Publisher").setHeading();
-
     new Setting(containerEl)
       .setName("Tomos URL")
       .setDesc("例: https://tomoswords.org/dev/")
