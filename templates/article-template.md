@@ -23,8 +23,12 @@ tags:
 
 [リンクの文字](https://example.com/)
 
-画像を使う場合は、次の記述をTomos Writeで挿入した画像記法に置き換えてください。画像を使わない場合は、この説明と画像記法を削除してください。
+Vault内の画像は、通常のMarkdown画像記法またはObsidianの画像埋め込みで貼り付けると、Tomos PublisherがMarkdownと一緒に送信します。
 
-![画像の説明](images/tms-0123456789abcdef.jpg)
+![画像の説明](attachments/photo.jpg)
+
+または
+
+![[photo.jpg]]
 
 [[別の記事]]
