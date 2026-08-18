@@ -1,5 +1,11 @@
 # Tomos Publisher
 
+Tomos Publisher sends Markdown and local images from Desktop and Mobile to a Tomos site over HTTPS. It can create a Tomos-ready article template, send drafts to Tomos Inbox for preview, and publish image-aware posts without modifying the original note or images in the Vault.
+
+The plugin supports standard Markdown image syntax and Obsidian-style image embeds. Local images are transferred with the Markdown, while external image URLs are left unchanged. Tomos v0.1.0-beta.1 or later is required.
+
+---
+
 Tomos Publisherは、Obsidian Desktop / MobileからMarkdownと画像をTomosへHTTPS送信するプラグインです。
 
 Tomosで記事を書き始めるための新規作成コマンド、Tomos Inboxへの下書き送信、画像付き投稿に対応しています。
@@ -22,7 +28,7 @@ Tomos Publisherは現在Obsidian Community Pluginsへの登録準備中です。
 使用するObsidian Vault内に次のフォルダーを作成し、2ファイルを配置してください。
 
 ```text
-<Vault>/.obsidian/plugins/tomos-obsidian/
+<Vault>/.obsidian/plugins/tomos-publisher/
   main.js
   manifest.json
 ```

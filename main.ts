@@ -1,4 +1,4 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting, TFile, normalizePath, requestUrl } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, RequestUrlResponse, Setting, TFile, normalizePath, requestUrl } from "obsidian";
 
 interface TomosPublisherSettings {
   tomosUrl: string;
@@ -64,6 +64,10 @@ Obsidianに保存した画像は、通常の画像記法または ![[image.jpg]]
 
 [[別の記事]]
 `;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
 export default class TomosPublisherPlugin extends Plugin {
   settings: TomosPublisherSettings = DEFAULT_SETTINGS;
@@ -212,7 +216,8 @@ export default class TomosPublisherPlugin extends Plugin {
         this.showSendResult(start.status, this.responseMessage(start));
         return;
       }
-      uploadId = typeof start.json?.upload_id === "string" ? start.json.upload_id : "";
+      const startJson: unknown = start.json;
+      uploadId = isRecord(startJson) && typeof startJson.upload_id === "string" ? startJson.upload_id : "";
       if (uploadId === "") {
         throw new Error("画像の送信準備情報を受け取れませんでした。");
       }
@@ -230,7 +235,7 @@ export default class TomosPublisherPlugin extends Plugin {
       }
       uploadId = "";
       new Notice(`Tomosへ画像${prepared.images.length}点とMarkdownを送信しました。`);
-    } catch (error) {
+    } catch (error: unknown) {
       if (uploadId !== "") await this.cancelImageUpload(uploadId);
       const message = error instanceof Error ? error.message : "Markdownを送信できませんでした。";
       new Notice(`Tomos: ${message}`);
@@ -373,7 +378,7 @@ export default class TomosPublisherPlugin extends Plugin {
     return alt.replace(/\\/g, "\\\\").replace(/\]/g, "\\]").replace(/\n/g, " ");
   }
 
-  private async postJson(payload: Record<string, unknown>) {
+  private async postJson(payload: Record<string, unknown>): Promise<RequestUrlResponse> {
     return requestUrl({
       url: this.apiUrl(),
       method: "POST",
@@ -395,10 +400,10 @@ export default class TomosPublisherPlugin extends Plugin {
     }
   }
 
-  private responseMessage(response: { json?: unknown }): string {
-    if (response.json && typeof response.json === "object" && "message" in response.json) {
-      const message = (response.json as { message?: unknown }).message;
-      if (typeof message === "string" && message.trim() !== "") return message;
+  private responseMessage(response: RequestUrlResponse): string {
+    const json: unknown = response.json;
+    if (isRecord(json) && typeof json.message === "string" && json.message.trim() !== "") {
+      return json.message;
     }
     return "";
   }
@@ -424,7 +429,12 @@ export default class TomosPublisherPlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const saved: unknown = await this.loadData();
+    this.settings = {
+      tomosUrl: isRecord(saved) && typeof saved.tomosUrl === "string" ? saved.tomosUrl : DEFAULT_SETTINGS.tomosUrl,
+      token: isRecord(saved) && typeof saved.token === "string" ? saved.token : DEFAULT_SETTINGS.token,
+      articleFolder: isRecord(saved) && typeof saved.articleFolder === "string" ? saved.articleFolder : DEFAULT_SETTINGS.articleFolder,
+    };
   }
 
   async saveSettings(): Promise<void> {
@@ -440,7 +450,7 @@ class TomosPublisherSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: "Tomos Publisher" });
+    new Setting(containerEl).setName("Tomos Publisher").setHeading();
 
     new Setting(containerEl)
       .setName("Tomos URL")
