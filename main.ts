@@ -71,6 +71,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export default class TomosPublisherPlugin extends Plugin {
   settings: TomosPublisherSettings = DEFAULT_SETTINGS;
+  private sendingFiles = new Set<string>();
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -195,6 +196,10 @@ export default class TomosPublisherPlugin extends Plugin {
       return;
     }
 
+    const fileKey = file.path;
+    if (this.sendingFiles.has(fileKey)) return;
+    this.sendingFiles.add(fileKey);
+
     let uploadId = "";
     try {
       const content = await this.app.vault.read(file);
@@ -239,6 +244,8 @@ export default class TomosPublisherPlugin extends Plugin {
       if (uploadId !== "") await this.cancelImageUpload(uploadId);
       const message = error instanceof Error ? error.message : "Markdownを送信できませんでした。";
       new Notice(`Tomos: ${message}`);
+    } finally {
+      this.sendingFiles.delete(fileKey);
     }
   }
 
