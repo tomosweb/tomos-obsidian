@@ -17,6 +17,13 @@ interface PreparedPost {
   images: PreparedImage[];
 }
 
+interface PublisherStatusPayload {
+  state: string;
+  message: string;
+  articleUrl: string;
+  social: Record<string, unknown> | null;
+}
+
 const DEFAULT_SETTINGS: TomosPublisherSettings = {
   tomosUrl: "",
   token: "",
@@ -45,6 +52,9 @@ draft: false
 tags:
   - 日記
   - Tomos
+# SNSへ告知する場合だけ指定します。Blueskyへ投稿する場合は次の行に「  - bluesky」を追加します
+social:
+# SNS投稿文を自分で指定する場合だけ social_text を追加します。未指定ならTomosが自動生成します
 ---
 
 # 記事のタイトル
@@ -201,18 +211,28 @@ export default class TomosPublisherPlugin extends Plugin {
     this.sendingFiles.add(fileKey);
 
     let uploadId = "";
+    const requestId = this.createRequestId();
     try {
       const content = await this.app.vault.read(file);
       const prepared = await this.preparePost(content, file);
 
       if (prepared.images.length === 0) {
-        const response = await this.postJson({ filename: file.name, content: prepared.content });
-        this.showSendResult(response.status, this.responseMessage(response));
+        const response = await this.postJson({
+          request_id: requestId,
+          filename: file.name,
+          content: prepared.content,
+        });
+        if (response.status < 200 || response.status >= 300) {
+          this.showSendResult(response.status, this.responseMessage(response));
+          return;
+        }
+        await this.showPublishResult(requestId);
         return;
       }
 
       const start = await this.postJson({
         action: "start",
+        request_id: requestId,
         filename: file.name,
         content: prepared.content,
         images: prepared.images.map((image) => image.name),
@@ -239,7 +259,7 @@ export default class TomosPublisherPlugin extends Plugin {
         return;
       }
       uploadId = "";
-      new Notice(`Tomosへ画像${prepared.images.length}点とMarkdownを送信しました。`);
+      await this.showPublishResult(requestId);
     } catch (error: unknown) {
       if (uploadId !== "") await this.cancelImageUpload(uploadId);
       const message = error instanceof Error ? error.message : "Markdownを送信できませんでした。";
@@ -384,6 +404,121 @@ export default class TomosPublisherPlugin extends Plugin {
 
   private escapeAlt(alt: string): string {
     return alt.replace(/\\/g, "\\\\").replace(/\]/g, "\\]").replace(/\n/g, " ");
+  }
+
+  private createRequestId(): string {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const random = Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+    return `publisher-${Date.now().toString(36)}-${random}`;
+  }
+
+  private async showPublishResult(requestId: string): Promise<void> {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      let response: RequestUrlResponse;
+      try {
+        response = await requestUrl({
+          url: this.apiUrl(),
+          method: "GET",
+          headers: {
+            "X-Tomos-Token": this.settings.token.trim(),
+            "X-Tomos-Action": "status",
+            "X-Tomos-Request-Id": requestId,
+          },
+          throw: false,
+        });
+      } catch {
+        new Notice("Tomosへ送信しました。公開結果はTomos側で確認してください。");
+        return;
+      }
+
+      if (response.status === 200) {
+        const status = this.publisherStatus(response);
+        if (status === null) {
+          new Notice("Tomosへ送信しました。");
+          return;
+        }
+        if (status.state === "received" || status.state === "receiving_images") {
+          await this.delay(500);
+          continue;
+        }
+        this.showPublisherStatus(status);
+        return;
+      }
+
+      if (response.status === 404) {
+        await this.delay(500);
+        continue;
+      }
+
+      if (response.status === 401) {
+        new Notice("Tomos: 公開結果の確認時に認証に失敗しました。");
+        return;
+      }
+
+      new Notice("Tomosへ送信しました。公開結果はTomos側で確認してください。");
+      return;
+    }
+
+    new Notice("Tomosへ送信しました。公開結果はTomos側で確認してください。");
+  }
+
+  private publisherStatus(response: RequestUrlResponse): PublisherStatusPayload | null {
+    const json: unknown = response.json;
+    if (!isRecord(json) || typeof json.state !== "string") return null;
+    return {
+      state: json.state,
+      message: typeof json.message === "string" ? json.message : "",
+      articleUrl: typeof json.article_url === "string" ? json.article_url : "",
+      social: isRecord(json.social) ? json.social : null,
+    };
+  }
+
+  private showPublisherStatus(status: PublisherStatusPayload): void {
+    if (status.state === "published") {
+      const socialStatus = status.social && typeof status.social.status === "string" ? status.social.status : "";
+      const socialCode = status.social && typeof status.social.code === "string" ? status.social.code : "";
+      const socialMessage = status.social && typeof status.social.message === "string" ? status.social.message : "";
+
+      if (socialStatus === "success") {
+        new Notice("Tomosへ公開し、Blueskyにも投稿しました。");
+        return;
+      }
+      if (socialStatus === "failed") {
+        new Notice(`Tomosへ公開しました。Blueskyには投稿していません。${socialMessage}`);
+        return;
+      }
+      if (socialStatus === "skipped" && socialCode === "already_posted") {
+        new Notice(`Tomosへ公開しました。Blueskyには再投稿していません。${socialMessage}`);
+        return;
+      }
+
+      new Notice("Tomosへ公開しました。");
+      return;
+    }
+
+    if (status.state === "already_published") {
+      new Notice("Tomos: 同じ内容の記事はすでに公開済みです。");
+      return;
+    }
+    if (status.state === "draft") {
+      new Notice("Tomosへ下書きとして送信しました。");
+      return;
+    }
+    if (status.state === "needs_attention") {
+      new Notice(`Tomosへ送信しました。${status.message || "Tomos Postで確認してください。"}`);
+      return;
+    }
+    if (status.state === "error") {
+      new Notice(`Tomos: ${status.message || "公開結果を確認できませんでした。"}`);
+      return;
+    }
+
+    new Notice("Tomosへ送信しました。");
+  }
+
+  private async delay(milliseconds: number): Promise<void> {
+    await new Promise<void>((resolve) => window.setTimeout(resolve, milliseconds));
   }
 
   private async postJson(payload: Record<string, unknown>): Promise<RequestUrlResponse> {
