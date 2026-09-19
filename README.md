@@ -24,6 +24,8 @@ It can create Tomos-ready article templates, send drafts to Tomos Inbox for prev
 - Preview Markdown and staged images in Tomos Inbox before publication
 - Send `draft: false` articles to the Tomos publication flow
 - Open the official Tomos Markdown guide from the command palette
+- Show Tomos publication results in Obsidian notices
+- With Tomos v1.0.5 or later, show Bluesky posting success, failure, and duplicate-post prevention results
 - Use the same plugin on Desktop and Mobile
 
 Local images are converted only in the outgoing Markdown. Tomos Publisher does not rewrite the original Markdown file and does not move or delete images in the Vault.
@@ -66,10 +68,24 @@ date:
 draft: false
 tags:
   - diary
+social:
 ---
 ```
 
 The Vault folder used to store the source Markdown and the Tomos `folder:` front matter value are independent settings.
+
+## Social Publishing
+
+With Tomos v1.0.5 or later, add Bluesky to the article front matter when you want Tomos to announce the published article:
+
+```yaml
+social:
+  - bluesky
+```
+
+If `social_text` is omitted, Tomos generates the social post text automatically. Add `social_text` only when you want to specify the post text yourself.
+
+Tomos Publisher shows the publication and Bluesky result in an Obsidian notice. Updating an already published article does not trigger an unintended duplicate Bluesky post when Tomos records that it was already posted. A Bluesky failure does not roll back the Tomos article publication.
 
 ## Manual installation
 

@@ -8,6 +8,9 @@ draft: false
 tags:
   - 日記
   - Tomos
+# SNSへ告知する場合だけ指定します。Blueskyへ投稿する場合は次の行に「  - bluesky」を追加します
+social:
+# SNS投稿文を自分で指定する場合だけ social_text を追加します。未指定ならTomosが自動生成します
 ---
 
 # 記事のタイトル
