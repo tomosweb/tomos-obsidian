@@ -52,6 +52,8 @@ Desktop / Mobileとも同じプラグインファイルを使用します。
 - Inboxから確認後に手動公開
 - `draft: false` またはdraft未指定の原稿をTomos側の公開処理へ送信
 - 公式の「Tomos用Markdownの書き方」をObsidianから開く
+- Tomos公開結果をObsidian Noticeで確認
+- Tomos v1.0.5以降ではBluesky投稿成功・失敗・再投稿防止もNoticeで確認
 - Desktop / Mobile共通対応
 
 ## 現在対応していないこと
@@ -138,6 +140,21 @@ Tomos Inboxへ保持されます。Tomos Postで本文と画像をプレビュ�
 
 Tomos側の公開処理へ送信されます。
 
+## Social Publishing
+
+Tomos v1.0.5以降では、Front MatterでBlueskyへの告知を指定した記事をTomos Publisherから送信すると、Tomosへの公開結果とBluesky投稿結果をObsidian Noticeで確認できます。
+
+```yaml
+social:
+  - bluesky
+```
+
+投稿文をTomosに自動生成させる場合は、`social_text`を書きません。自分で投稿文を指定する場合だけ`social_text`を追加します。
+
+同じ記事を更新した場合、Tomos側の投稿履歴に基づいてBlueskyへの意図しない再投稿を防ぎ、その結果もPublisherに表示されます。
+
+Bluesky投稿に失敗しても、Tomosの記事公開は取り消されません。
+
 ## Tomos用Markdown
 
 Tomos Publisherは既存のMarkdownやFront MatterをVault上では書き換えません。画像転送が必要な場合だけ、Tomosへ送信するMarkdownの画像参照を標準管理名へ変換します。
@@ -150,6 +167,7 @@ date:
 draft: false
 tags:
   - 日記
+social:
 ---
 ```
 
