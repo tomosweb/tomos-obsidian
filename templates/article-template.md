@@ -4,6 +4,8 @@ title: 記事のタイトル
 folder: diary
 # 投稿日を指定する場合はYYYY-MM-DD形式。空欄なら初回公開日に自動補完されます
 date:
+# BlueskyカードなどのOGP画像を指定する場合は、Vault内画像または公開画像URLを指定します
+image:
 draft: false
 tags:
   - 日記

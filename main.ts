@@ -48,6 +48,8 @@ title: 記事のタイトル
 folder: diary
 # 投稿日を指定する場合はYYYY-MM-DD形式。空欄なら初回公開日に自動補完されます
 date:
+# BlueskyカードなどのOGP画像を指定する場合は、Vault内画像または公開画像URLを指定します
+image:
 draft: false
 tags:
   - 日記
@@ -304,6 +306,35 @@ export default class TomosPublisherPlugin extends Plugin {
     const replacements: Array<{ start: number; end: number; text: string }> = [];
     const images = new Map<string, PreparedImage>();
     const occupied: Array<{ start: number; end: number }> = [];
+
+    const frontMatterEnd = content.startsWith("---\n") ? content.indexOf("\n---", 4) : -1;
+    if (frontMatterEnd > 0) {
+      const frontMatter = content.slice(4, frontMatterEnd);
+      const imageMatch = /^image:\s*(.+?)\s*$/m.exec(frontMatter);
+      if (imageMatch && typeof imageMatch.index === "number") {
+        const rawValue = imageMatch[1].trim();
+        const unquoted = rawValue.replace(/^(["'])(.*)\1$/, "$2").trim();
+        if (
+          unquoted !== "" &&
+          !/^(?:https?:|data:|#)/i.test(unquoted) &&
+          !/^images\/tms-[a-f0-9]{16}\.(?:jpg|jpeg|png|gif|webp)$/i.test(unquoted)
+        ) {
+          const imageFile = this.resolveLocalImage(unquoted, sourceFile);
+          if (!imageFile) {
+            throw new Error(`OGP画像「${unquoted}」がVault内に見つかりません。`);
+          }
+          const preparedImage = await this.prepareImage(imageFile);
+          images.set(preparedImage.name, preparedImage);
+          const lineStart = 4 + imageMatch.index;
+          const lineEnd = lineStart + imageMatch[0].length;
+          replacements.push({
+            start: lineStart,
+            end: lineEnd,
+            text: `image: images/${preparedImage.name}`,
+          });
+        }
+      }
+    }
 
     const wikiPattern = /!\[\[([^\]\n|]+)(?:\|([^\]\n]*))?\]\]/g;
     let wikiMatch: RegExpExecArray | null;
