@@ -18,7 +18,7 @@ Tomosで記事を書き始めるための新規作成コマンド、Tomos Inbox�
 
 ## インストール
 
-Tomos Publisherは現在Obsidian Community Pluginsへの登録準備中です。登録まではGitHub Releaseから手動でインストールできます。
+Tomos PublisherはGitHub Releaseから手動でインストールできます。このリリースではObsidian Community Pluginsへの登録申請は行いません。
 
 最新ReleaseのAssetsから次の2ファイルを取得してください。
 
@@ -224,7 +224,7 @@ Desktop / Mobileの両方で、以下の一連の操作を確認しています�
 
 MIT License。詳細は[LICENSE](LICENSE)を参照してください。
 
-## GitHub版Tomosへの投稿（開発版）
+## GitHub版Tomosへの投稿
 
 Publisher設定の「投稿先」を「GitHub版Tomos」に切り替え、「GitHubに接続」を選びます。ブラウザでGitHub Appへの許可を確認し、「Obsidianに戻る」を押して、Repository／Branch／Content root（通常content）を選択してください。戻れない環境では、ブラウザの接続コードをPublisherへ貼り付けます。コードは5分間有効です。接続中にObsidianを再起動した場合は、最初から接続し直してください。
 
@@ -236,7 +236,7 @@ API成功はGitHubへのcommit完了を表します。公開サイトへの反�
 
 GitHub版ではBluesky投稿を行いません。従来Tomosへの投稿では、Tomos URL・投稿用トークン・画像・Bluesky投稿の既存設定を引き続き使えます。
 
-### 開発版の検証
+### 開発・検証
 
 ```sh
 npm ci
@@ -244,7 +244,7 @@ npm test
 npm run build
 ```
 
-生成したmain.jsとmanifest.jsonをVaultの `.obsidian/plugins/tomos-publisher/` に置き、Obsidianでプラグインを再読み込みします。正式ReleaseはDesktop／Mobileでの確認後です。
+生成したmain.jsとmanifest.jsonをVaultの `.obsidian/plugins/tomos-publisher/` に置き、Obsidianでプラグインを再読み込みします。0.3.0の公開前にDesktop／Mobileでの投稿、画像縮小、記事の移動・画像削除、従来Tomos・Bluesky投稿を実機確認しています。
 
 - Desktop：接続→Repository選択→日付なし記事投稿
 - 同じ記事の本文更新：初回公開日時が保持される
@@ -253,8 +253,8 @@ npm run build
 - Mobile：接続の戻り／コード手入力と記事・画像投稿
 - 従来Tomos：本文・画像・Bluesky投稿
 
-### 送信画像の自動縮小（開発版）
+### 送信画像の自動縮小
 
 従来Tomos／GitHub版とも、本文画像とOGP画像の送信用コピーを自動処理します。JPEG・PNG・WebPは縦横比を保って長辺最大2048pxに縮小し、小さい画像は拡大しません。JPEG・WebPは品質0.82で再圧縮します。PNGは透明度を保持し、GIFはアニメーションを保持するため変更しません。縮小不要で処理後の容量が増える場合や、画像処理に失敗した場合は元データを送ります。Vaultの元画像は変更しません。管理名とハッシュは実際に送信する処理後の画像データから生成します。
 
-実画像でのDesktop／Mobile確認は開発版更新後に行います。
+Desktop／Mobileの実機確認は完了しています。

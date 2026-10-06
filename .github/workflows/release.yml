@@ -1,0 +1,47 @@
+name: Release Publisher
+on:
+  push:
+    branches: [main]
+    paths:
+      - manifest.json
+      - .github/workflows/release.yml
+permissions:
+  contents: write
+concurrency:
+  group: publisher-release
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+        env:
+          TZ: Asia/Tokyo
+      - run: npm run build
+      - name: Validate and package
+        run: |
+          node -e 'const fs=require("fs"); const m=require("./manifest.json"); const p=require("./package.json"); const v=require("./versions.json"); if(m.version!==p.version || v[m.version]!==m.minAppVersion || !fs.statSync("main.js").size)process.exit(1)'
+          version=$(node -p 'require("./manifest.json").version')
+          mkdir -p dist/tomos-publisher
+          cp main.js manifest.json dist/tomos-publisher/
+          (cd dist && zip -q -r "tomos-publisher-$version.zip" tomos-publisher)
+          cp main.js manifest.json dist/
+          (cd dist && sha256sum main.js manifest.json "tomos-publisher-$version.zip" > SHA256SUMS)
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p 'require("./manifest.json").version')
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "Release $version already exists"
+            exit 0
+          fi
+          gh release create "$version" --target "$GITHUB_SHA" --title "Tomos Publisher $version" --notes-file RELEASE_NOTES.md --draft
+          gh release upload "$version" dist/main.js dist/manifest.json "dist/tomos-publisher-$version.zip" dist/SHA256SUMS
+          gh release edit "$version" --draft=false --latest

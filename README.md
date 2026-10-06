@@ -196,3 +196,11 @@ Desktop / Mobileの両方で、以下の一連の操作を確認しています�
 ## ライセンス
 
 MIT License。詳細は[LICENSE](LICENSE)を参照してください。
+
+## GitHub publishing and image optimization (0.3.0)
+
+Select GitHub版Tomos in Publisher settings, connect through the Tomos GitHub App, and select a repository, branch and content root. No GitHub PAT is required. Only a repository-scoped Tomos publish grant is stored in plugin settings. Reposting, renaming and moving a tracked note preserve its first publication date; obsolete pages and images are removed in the same commit. GitHub publishing does not post to Bluesky.
+
+Body and OGP upload copies of JPEG/PNG/WebP images are resized to a maximum long edge of 2048 pixels without upscaling. JPEG/WebP use quality 0.82. GIF animation and original Vault files are preserved.
+
+Install manually from the [latest GitHub Release](https://github.com/tomosweb/tomos-obsidian/releases/latest): place main.js and manifest.json in `<Vault>/.obsidian/plugins/tomos-publisher/`, then enable or reload the plugin. This release does not include an Obsidian Community Plugins submission. [Japanese instructions](README.ja.md).
