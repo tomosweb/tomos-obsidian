@@ -1,6 +1,11 @@
-import { App, Notice, Plugin, PluginSettingTab, RequestUrlResponse, Setting, TFile, normalizePath, requestUrl } from "obsidian";
+import { App, Notice, Plugin, PluginSettingTab, RequestUrlResponse, Setting, TFile, parseYaml, normalizePath, requestUrl } from "obsidian";
+
+import { GithubConnection, GithubPublication, GithubConnector, publishGithub, githubScope } from "./github";
 
 interface TomosPublisherSettings {
+  target: "core" | "github";
+  github: GithubConnection | null;
+  githubPublications: Record<string, GithubPublication>;
   tomosUrl: string;
   token: string;
   articleFolder: string;
@@ -25,6 +30,9 @@ interface PublisherStatusPayload {
 }
 
 const DEFAULT_SETTINGS: TomosPublisherSettings = {
+  target: "core",
+  github: null,
+  githubPublications: {},
   tomosUrl: "",
   token: "",
   articleFolder: "",
@@ -84,9 +92,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export default class TomosPublisherPlugin extends Plugin {
   settings: TomosPublisherSettings = DEFAULT_SETTINGS;
   private sendingFiles = new Set<string>();
+  private githubSending = false;
+  githubConnector!: GithubConnector;
+  private settingTab: TomosPublisherSettingTab | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    this.githubConnector = new GithubConnector(this.app, async (connection) => {
+      this.settings.github = connection;
+      this.settings.target = "github";
+      await this.saveSettings();
+      this.settingTab?.display();
+    });
+    this.registerObsidianProtocolHandler("tomos-publisher-github-connect", (params) => {
+      void this.githubConnector.receive(params.code, params.state);
+    });
+    this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+      for (const key of Object.keys(this.settings.githubPublications)) {
+        const separator = key.indexOf("\n");
+        const storedPath = key.slice(separator + 1);
+        if (storedPath === oldPath || storedPath.startsWith(oldPath + "/")) {
+          const newKey = key.slice(0, separator + 1) + file.path + storedPath.slice(oldPath.length);
+          this.settings.githubPublications[newKey] = this.settings.githubPublications[key];
+          delete this.settings.githubPublications[key];
+        }
+      }
+      void this.saveSettings();
+    }));
 
     this.addCommand({
       id: "create-tomos-article",
@@ -116,8 +148,11 @@ export default class TomosPublisherPlugin extends Plugin {
       await this.sendCurrentFileToTomos();
     });
 
-    this.addSettingTab(new TomosPublisherSettingTab(this.app, this));
+    this.settingTab = new TomosPublisherSettingTab(this.app, this);
+    this.addSettingTab(this.settingTab);
   }
+
+  onunload(): void { this.githubConnector?.cancel(); }
 
   private async createTomosArticle(): Promise<void> {
     const path = this.findAvailableArticlePath(this.articleFolderPath());
@@ -170,6 +205,10 @@ export default class TomosPublisherPlugin extends Plugin {
   }
 
   async testConnection(): Promise<void> {
+    if (this.settings.target === "github") {
+      await this.githubConnector.test(this.settings.github);
+      return;
+    }
     const invalid = this.validateSettings();
     if (invalid) {
       new Notice(`Tomos: ${invalid}`);
@@ -196,6 +235,10 @@ export default class TomosPublisherPlugin extends Plugin {
   }
 
   private async sendCurrentFileToTomos(): Promise<void> {
+    if (this.settings.target === "github") {
+      await this.sendCurrentFileToGithub();
+      return;
+    }
     const invalid = this.validateSettings();
     if (invalid) {
       new Notice(`Tomos: ${invalid}`);
@@ -268,6 +311,40 @@ export default class TomosPublisherPlugin extends Plugin {
       new Notice(`Tomos: ${message}`);
     } finally {
       this.sendingFiles.delete(fileKey);
+    }
+  }
+
+  private async sendCurrentFileToGithub(): Promise<void> {
+    const connection = this.settings.github;
+    if (!connection) { new Notice("Tomos: 設定でGitHubに接続してください。"); return; }
+    const file = this.app.workspace.getActiveFile();
+    if (!(file instanceof TFile) || file.extension.toLowerCase() !== "md") {
+      new Notice("Tomos: Markdownファイルを開いてください。"); return;
+    }
+    if (this.githubSending || this.sendingFiles.has(file.path)) return;
+    this.githubSending = true;
+    const originalPath = file.path;
+    try {
+      const content = await this.app.vault.read(file);
+      const front = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(content);
+      const metadata: unknown = front ? parseYaml(front[1]) : {};
+      if (metadata !== null && !isRecord(metadata)) throw new Error("Front Matterを確認してください。");
+      const folder = isRecord(metadata) && typeof metadata.folder === "string" ? metadata.folder.trim() : "";
+      const draft = isRecord(metadata) && metadata.draft === true;
+      const prepared = await this.preparePost(content.replace(/\r\n/g, "\n"), file);
+      const key = githubScope(connection) + "\n" + originalPath;
+      const result = await publishGithub(connection, file.name, folder, draft, prepared,
+        this.settings.githubPublications[key]);
+      // A Vault rename during upload still belongs to the same source file.
+      const currentKey = githubScope(connection) + "\n" + file.path;
+      delete this.settings.githubPublications[key];
+      this.settings.githubPublications[currentKey] = result;
+      await this.saveSettings();
+      new Notice(draft ? "GitHubへ下書きを送信しました。" : "GitHubへ投稿しました。公開サイトへの反映には少し時間がかかります。");
+    } catch (error: unknown) {
+      new Notice(`Tomos: ${error instanceof Error ? error.message : "GitHubへ投稿できませんでした。"}`);
+    } finally {
+      this.githubSending = false;
     }
   }
 
@@ -605,6 +682,13 @@ export default class TomosPublisherPlugin extends Plugin {
   async loadSettings(): Promise<void> {
     const saved: unknown = await this.loadData();
     this.settings = {
+      target: isRecord(saved) && saved.target === "github" ? "github" : "core",
+      github: isRecord(saved) && isRecord(saved.github) && typeof saved.github.grant === "string"
+        && isRecord(saved.github.repository) && typeof saved.github.repository.full_name === "string"
+        && typeof saved.github.repository.id === "number" && typeof saved.github.repository.branch === "string"
+        && typeof saved.github.repository.content_root === "string" ? saved.github as unknown as GithubConnection : null,
+      githubPublications: isRecord(saved) && isRecord(saved.githubPublications)
+        ? saved.githubPublications as unknown as Record<string, GithubPublication> : {},
       tomosUrl: isRecord(saved) && typeof saved.tomosUrl === "string" ? saved.tomosUrl : DEFAULT_SETTINGS.tomosUrl,
       token: isRecord(saved) && typeof saved.token === "string" ? saved.token : DEFAULT_SETTINGS.token,
       articleFolder: isRecord(saved) && typeof saved.articleFolder === "string" ? saved.articleFolder : DEFAULT_SETTINGS.articleFolder,
@@ -624,6 +708,26 @@ class TomosPublisherSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    new Setting(containerEl).setName("投稿先").addDropdown((dropdown) => {
+      dropdown.addOption("core", "Tomos").addOption("github", "GitHub版Tomos")
+        .setValue(this.plugin.settings.target).onChange(async (value) => {
+          this.plugin.settings.target = value === "github" ? "github" : "core";
+          await this.plugin.saveSettings(); this.display();
+        });
+    });
+    if (this.plugin.settings.target === "github") {
+      new Setting(containerEl).setName("GitHub接続")
+        .setDesc(this.plugin.settings.github?.repository.full_name ?? "未接続")
+        .addButton((button) => button.setButtonText("GitHubに接続").onClick(async () => {
+          await this.plugin.githubConnector.start();
+        }))
+        .addButton((button) => button.setButtonText("切断").onClick(async () => {
+          this.plugin.githubConnector.cancel();
+          this.plugin.settings.github = null;
+          await this.plugin.saveSettings(); this.display();
+        }));
+    }
+    if (this.plugin.settings.target === "core") {
     new Setting(containerEl)
       .setName("Tomos URL")
       .setDesc("例: https://tomoswords.org/dev/")
@@ -647,6 +751,8 @@ class TomosPublisherSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         });
       });
+
+    }
 
     new Setting(containerEl)
       .setName("Tomos記事の作成フォルダ")
@@ -679,3 +785,4 @@ class TomosPublisherSettingTab extends PluginSettingTab {
       );
   }
 }
+

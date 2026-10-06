@@ -223,3 +223,32 @@ Desktop / Mobileの両方で、以下の一連の操作を確認しています�
 ## ライセンス
 
 MIT License。詳細は[LICENSE](LICENSE)を参照してください。
+
+## GitHub版Tomosへの投稿（開発版）
+
+Publisher設定の「投稿先」を「GitHub版Tomos」に切り替え、「GitHubに接続」を選びます。ブラウザでGitHub Appへの許可を確認し、「Obsidianに戻る」を押して、Repository／Branch／Content root（通常content）を選択してください。戻れない環境では、ブラウザの接続コードをPublisherへ貼り付けます。コードは5分間有効です。接続中にObsidianを再起動した場合は、最初から接続し直してください。
+
+GitHubのトークンやPATは保存しません。選択したRepository・Branch・Content rootに限定したTomosのpublish grantをObsidianのプラグイン設定へ保存します。切断はこの許可情報のローカル削除です。GitHub Appのアクセス解除やgrant期限切れの場合は再接続が必要です。
+
+通常の「Tomosへ送信」を使います。Front Matterのfolderで公開先を指定し、draft: trueなら下書きとして保存します。元のVault Markdownや画像は変更せず、送信用コピーのローカル画像参照をGitHub版のfiles/article-*/tms-*へ変換します。画像はOGPを含め最大5点、1点10MBまで。日付が未記載なら共通APIがGitHub上の記事へ補完し、再投稿・名前変更・移動でも初回公開日時を保持します。
+
+API成功はGitHubへのcommit完了を表します。公開サイトへの反映にはGitHub Actions等の実行時間が必要です。更新時には前回の投稿先と画像情報を送信し、名前変更・移動・不要画像削除を同じcommitで実行します。この情報はVault内のファイルとRepositoryごとに保存します。別Vaultへのコピーやプラグイン設定削除後は別の投稿として扱われることがあります。
+
+GitHub版ではBluesky投稿を行いません。従来Tomosへの投稿では、Tomos URL・投稿用トークン・画像・Bluesky投稿の既存設定を引き続き使えます。
+
+### 開発版の検証
+
+```sh
+npm ci
+npm test
+npm run build
+```
+
+生成したmain.jsとmanifest.jsonをVaultの `.obsidian/plugins/tomos-publisher/` に置き、Obsidianでプラグインを再読み込みします。正式ReleaseはDesktop／Mobileでの確認後です。
+
+- Desktop：接続→Repository選択→日付なし記事投稿
+- 同じ記事の本文更新：初回公開日時が保持される
+- 本文画像／OGP画像を含む投稿
+- 記事名変更・公開先folder変更・不要画像削除
+- Mobile：接続の戻り／コード手入力と記事・画像投稿
+- 従来Tomos：本文・画像・Bluesky投稿

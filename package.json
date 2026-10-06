@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production"
+    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "test": "node tests/github-publisher-check.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
