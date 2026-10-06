@@ -1,6 +1,7 @@
 import { App, Notice, Plugin, PluginSettingTab, RequestUrlResponse, Setting, TFile, parseYaml, normalizePath, requestUrl } from "obsidian";
 
 import { GithubConnection, GithubPublication, GithubConnector, publishGithub, githubScope } from "./github";
+import { optimizeImage } from "./imageOptimization";
 
 interface TomosPublisherSettings {
   target: "core" | "github";
@@ -495,9 +496,10 @@ export default class TomosPublisherPlugin extends Plugin {
   private async prepareImage(file: TFile): Promise<PreparedImage> {
     const format = IMAGE_EXTENSIONS[file.extension.toLowerCase()];
     if (!format) throw new Error(`画像「${file.name}」の形式には対応していません。`);
-    const data = await this.app.vault.readBinary(file);
-    if (data.byteLength <= 0) throw new Error(`画像「${file.name}」が空です。`);
-    if (data.byteLength > MAX_IMAGE_BYTES) throw new Error(`画像「${file.name}」は10MB以下にしてください。`);
+    const original = await this.app.vault.readBinary(file);
+    if (original.byteLength <= 0) throw new Error(`画像「${file.name}」が空です。`);
+    if (original.byteLength > MAX_IMAGE_BYTES) throw new Error(`画像「${file.name}」は10MB以下にしてください。`);
+    const data = await optimizeImage(original, format.mimeType);
     const webCrypto: Crypto = globalThis.crypto;
     const digest: ArrayBuffer = await webCrypto.subtle.digest("SHA-256", data);
     const hash = Array.from(new Uint8Array(digest))
@@ -785,4 +787,3 @@ class TomosPublisherSettingTab extends PluginSettingTab {
       );
   }
 }
-
