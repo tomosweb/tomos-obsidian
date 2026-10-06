@@ -18,7 +18,7 @@ Tomosで記事を書き始めるための新規作成コマンド、Tomos Inbox�
 
 ## インストール
 
-Tomos Publisherは現在Obsidian Community Pluginsへの登録準備中です。登録まではGitHub Releaseから手動でインストールできます。
+Tomos PublisherはGitHub Releaseから手動でインストールできます。このリリースではObsidian Community Pluginsへの登録申請は行いません。
 
 最新ReleaseのAssetsから次の2ファイルを取得してください。
 
@@ -223,3 +223,38 @@ Desktop / Mobileの両方で、以下の一連の操作を確認しています�
 ## ライセンス
 
 MIT License。詳細は[LICENSE](LICENSE)を参照してください。
+
+## GitHub版Tomosへの投稿
+
+Publisher設定の「投稿先」を「GitHub版Tomos」に切り替え、「GitHubに接続」を選びます。ブラウザでGitHub Appへの許可を確認し、「Obsidianに戻る」を押して、Repository／Branch／Content root（通常content）を選択してください。戻れない環境では、ブラウザの接続コードをPublisherへ貼り付けます。コードは5分間有効です。接続中にObsidianを再起動した場合は、最初から接続し直してください。
+
+GitHubのトークンやPATは保存しません。選択したRepository・Branch・Content rootに限定したTomosのpublish grantをObsidianのプラグイン設定へ保存します。切断はこの許可情報のローカル削除です。GitHub Appのアクセス解除やgrant期限切れの場合は再接続が必要です。
+
+通常の「Tomosへ送信」を使います。Front Matterのfolderで公開先を指定し、draft: trueなら下書きとして保存します。元のVault Markdownや画像は変更せず、送信用コピーのローカル画像参照をGitHub版のfiles/article-*/tms-*へ変換します。画像はOGPを含め最大5点、1点10MBまで。日付が未記載なら共通APIがGitHub上の記事へ補完し、再投稿・名前変更・移動でも初回公開日時を保持します。
+
+API成功はGitHubへのcommit完了を表します。公開サイトへの反映にはGitHub Actions等の実行時間が必要です。更新時には前回の投稿先と画像情報を送信し、名前変更・移動・不要画像削除を同じcommitで実行します。この情報はVault内のファイルとRepositoryごとに保存します。別Vaultへのコピーやプラグイン設定削除後は別の投稿として扱われることがあります。
+
+GitHub版ではBluesky投稿を行いません。従来Tomosへの投稿では、Tomos URL・投稿用トークン・画像・Bluesky投稿の既存設定を引き続き使えます。
+
+### 開発・検証
+
+```sh
+npm ci
+npm test
+npm run build
+```
+
+生成したmain.jsとmanifest.jsonをVaultの `.obsidian/plugins/tomos-publisher/` に置き、Obsidianでプラグインを再読み込みします。0.3.0の公開前にDesktop／Mobileでの投稿、画像縮小、記事の移動・画像削除、従来Tomos・Bluesky投稿を実機確認しています。
+
+- Desktop：接続→Repository選択→日付なし記事投稿
+- 同じ記事の本文更新：初回公開日時が保持される
+- 本文画像／OGP画像を含む投稿
+- 記事名変更・公開先folder変更・不要画像削除
+- Mobile：接続の戻り／コード手入力と記事・画像投稿
+- 従来Tomos：本文・画像・Bluesky投稿
+
+### 送信画像の自動縮小
+
+従来Tomos／GitHub版とも、本文画像とOGP画像の送信用コピーを自動処理します。JPEG・PNG・WebPは縦横比を保って長辺最大2048pxに縮小し、小さい画像は拡大しません。JPEG・WebPは品質0.82で再圧縮します。PNGは透明度を保持し、GIFはアニメーションを保持するため変更しません。縮小不要で処理後の容量が増える場合や、画像処理に失敗した場合は元データを送ります。Vaultの元画像は変更しません。管理名とハッシュは実際に送信する処理後の画像データから生成します。
+
+Desktop／Mobileの実機確認は完了しています。

@@ -1,9 +1,9 @@
 {
   "id": "tomos-publisher",
   "name": "Tomos Publisher",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "minAppVersion": "1.5.0",
-  "description": "Send Markdown and images from Desktop and Mobile to Tomos.",
+  "description": "Publish Markdown and optimized images from Desktop and Mobile to Tomos Core or GitHub.",
   "author": "Tomos",
   "isDesktopOnly": false
 }
