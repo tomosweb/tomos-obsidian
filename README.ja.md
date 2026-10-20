@@ -18,26 +18,13 @@ Tomosで記事を書き始めるための新規作成コマンド、Tomos Inbox�
 
 ## インストール
 
-Tomos PublisherはGitHub Releaseから手動でインストールできます。このリリースではObsidian Community Pluginsへの登録申請は行いません。
+Tomos PublisherはObsidianのコミュニティプラグインからインストールできます。PC・モバイルのどちらでも利用できます。
 
-最新ReleaseのAssetsから次の2ファイルを取得してください。
+1. Obsidianの**設定 → コミュニティプラグイン → 閲覧**を開きます。
+2. **Tomos Publisher**を検索して**インストール**します。
+3. **有効化**して、Tomos Publisherの設定を開きます。
 
-- `main.js`
-- `manifest.json`
-
-使用するObsidian Vault内に次のフォルダーを作成し、2ファイルを配置してください。
-
-```text
-<Vault>/.obsidian/plugins/tomos-publisher/
-  main.js
-  manifest.json
-```
-
-`.obsidian` が見えない場合は、OSやファイル管理アプリで隠しファイルを表示してください。
-
-配置後、Obsidianを開き、「設定」→「コミュニティプラグイン」から `Tomos Publisher` を有効にします。一覧に表示されない場合はObsidianを再起動してください。
-
-Desktop / Mobileとも同じプラグインファイルを使用します。
+投稿先に合わせた接続方法は、以下の「プラグイン設定」または「GitHub版Tomosへの投稿」をご覧ください。
 
 ## できること
 
@@ -199,7 +186,7 @@ npm install
 npm run build
 ```
 
-`main.js` は生成物のためGit管理には含めず、公開版はGitHub ReleaseのAssetsとして配布します。
+`main.js` は生成物のためGit管理には含めません。一般利用者はObsidianのコミュニティプラグインから導入してください。
 
 ## セキュリティ
 
