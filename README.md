@@ -6,6 +6,20 @@ The plugin supports standard Markdown image syntax and Obsidian-style image embe
 
 ---
 
+## Installation
+
+Tomos Publisher is available in Obsidian's Community Plugins directory for desktop and mobile.
+
+1. Open **Settings → Community plugins → Browse** in Obsidian.
+2. Search for **Tomos Publisher** and select **Install**.
+3. Select **Enable**, then open the Tomos Publisher settings to connect your site.
+
+To publish to a GitHub-based Tomos site, choose **GitHub版Tomos** as the destination, connect through the Tomos GitHub App, and select your repository, branch, and content root. No personal access token is needed.
+
+[日本語のインストール手順](README.ja.md#インストール)
+
+---
+
 Tomos Publisherは、Obsidian Desktop / MobileからMarkdownと画像をTomosへHTTPS送信するプラグインです。
 
 Tomosで記事を書き始めるための新規作成コマンド、Tomos Inboxへの下書き送信、画像付き投稿に対応しています。
@@ -203,4 +217,4 @@ Select GitHub版Tomos in Publisher settings, connect through the Tomos GitHub Ap
 
 Body and OGP upload copies of JPEG/PNG/WebP images are resized to a maximum long edge of 2048 pixels without upscaling. JPEG/WebP use quality 0.82. GIF animation and original Vault files are preserved.
 
-Install manually from the [latest GitHub Release](https://github.com/tomosweb/tomos-obsidian/releases/latest): place main.js and manifest.json in `<Vault>/.obsidian/plugins/tomos-publisher/`, then enable or reload the plugin. This release does not include an Obsidian Community Plugins submission. [Japanese instructions](README.ja.md).
+Install Tomos Publisher from **Obsidian → Settings → Community plugins → Browse**. Search for **Tomos Publisher**, install it, and enable it. [Japanese instructions](README.ja.md).
